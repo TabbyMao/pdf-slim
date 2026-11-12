@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="color-scheme" content="light">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PDF Slim</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f6f7f9; --surface: #ffffff; --surface-2: #f1f3f6; --text: #0f1115; --muted: #6b7280; --faint: #9aa1ad;
+    --border: #e5e7eb; --accent: #4f46e5; --accent-2: #7c3aed; --accent-soft: #eef0ff; --good: #059669; --good-soft: #e7f7f1; --bad: #dc2626;
+    --shadow: 0 1px 2px rgba(16,24,40,.04), 0 8px 24px -12px rgba(16,24,40,.12);
+    --radius: 18px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased; line-height: 1.5;
+  }
+  body::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(600px 300px at 15% -5%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 70%),
+      radial-gradient(500px 280px at 95% 0%, color-mix(in srgb, var(--accent-2) 12%, transparent), transparent 70%);
+  }
+  main { position: relative; z-index: 1; max-width: 720px; margin: 0 auto; padding: 48px 20px 72px; }
+
+  header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 28px; flex-wrap: wrap; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 17px; letter-spacing: -.01em; }
+  .logo { width: 30px; height: 30px; border-radius: 9px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); display: grid; place-items: center; box-shadow: 0 4px 14px -4px color-mix(in srgb, var(--accent) 60%, transparent); }
+  .badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); background: var(--surface); border: 1px solid var(--border); padding: 5px 10px; border-radius: 999px; }
+  .badge svg { color: var(--good); }
+
+  .hero h1 { font-size: clamp(30px, 5vw, 42px); line-height: 1.08; letter-spacing: -.035em; margin: 0 0 10px; font-weight: 700; }
+  .hero h1 span { background: linear-gradient(90deg, var(--accent), var(--accent-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero p { color: var(--muted); margin: 0 0 28px; font-size: 16px; max-width: 540px; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+  .drop {
+    margin: 8px; border-radius: 13px; padding: 40px 20px; text-align: center; cursor: pointer; outline: none;
+    border: 1.5px dashed var(--border); background: var(--surface-2);
+    transition: border-color .15s, background .15s, transform .15s;
+  }
+  .drop:hover, .drop:focus-visible, .drop.over { border-color: var(--accent); background: var(--accent-soft); }
+  .drop.over { transform: scale(.995); }
+  .drop .icon { width: 46px; height: 46px; border-radius: 12px; margin: 0 auto 14px; display: grid; place-items: center; background: var(--surface); border: 1px solid var(--border); color: var(--accent); box-shadow: var(--shadow); }
+  .drop .big { font-weight: 600; font-size: 16px; }
+  .drop .big u { text-decoration: none; color: var(--accent); }
+  .drop .small { color: var(--faint); font-size: 13px; margin-top: 4px; }
+
+  .settings { padding: 6px 22px 20px; display: grid; gap: 18px; }
+  .opt-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+  .opt-title { font-size: 14px; font-weight: 600; }
+  .opt-sub { font-size: 12.5px; color: var(--faint); }
+  .seg { position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--surface-2); border: 1px solid var(--border); border-radius: 11px; padding: 3px; }
+  .seg button { position: relative; z-index: 1; font: inherit; font-size: 13.5px; font-weight: 500; color: var(--muted); background: none; border: 0; padding: 7px 8px; border-radius: 8px; cursor: pointer; transition: color .15s; white-space: nowrap; }
+  .seg button.on { color: var(--text); }
+  .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .seg .thumb { position: absolute; z-index: 0; top: 3px; bottom: 3px; border-radius: 8px; background: var(--surface); box-shadow: 0 1px 3px rgba(0,0,0,.12); transition: left .22s cubic-bezier(.3,.7,.2,1), width .22s; }
+  .hint { font-size: 12.5px; color: var(--muted); margin-top: 7px; }
+
+  .section-title { display: flex; align-items: center; justify-content: space-between; margin: 30px 2px 10px; }
+  .section-title h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--faint); margin: 0; font-weight: 600; }
+  .link-btn { font: inherit; font-size: 13px; font-weight: 500; color: var(--accent); background: none; border: 0; cursor: pointer; padding: 4px 6px; border-radius: 6px; }
+  .link-btn:hover { background: var(--accent-soft); }
+
+  .files { display: grid; gap: 10px; }
+  .file { padding: 16px 18px; display: grid; grid-template-columns: auto 1fr auto; gap: 4px 14px; align-items: center; }
+  .ficon { grid-row: span 2; width: 38px; height: 46px; border-radius: 7px; background: var(--surface-2); border: 1px solid var(--border); display: grid; place-items: center; font-family: "Geist Mono", monospace; font-size: 9.5px; font-weight: 500; color: var(--muted); }
+  .fname { font-weight: 550; font-size: 14.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+  .fmeta { grid-column: 2; font-size: 12.5px; color: var(--muted); min-width: 0; }
+  .fmeta .err { color: var(--bad); }
+  .nums { font-family: "Geist Mono", monospace; font-size: 13px; color: var(--text); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .nums s { color: var(--faint); text-decoration: none; }
+  .pill { font-family: "Geist", sans-serif; font-size: 12px; font-weight: 600; color: var(--good); background: var(--good-soft); padding: 2px 8px; border-radius: 999px; }
+  .detail { margin-top: 3px; }
+  .meter { grid-column: 1 / -1; margin-top: 10px; height: 6px; border-radius: 99px; background: var(--surface-2); overflow: hidden; position: relative; }
+  .meter > i { position: absolute; inset: 0 auto 0 0; width: 0; border-radius: 99px; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width .3s ease; }
+  .meter.done > i { background: var(--good); }
+  .actions { grid-row: span 2; grid-column: 3; display: flex; gap: 8px; }
+  .btn { font: inherit; font-size: 13.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 7px; border: 0; border-radius: 10px; padding: 9px 14px; cursor: pointer; color: #fff; background: var(--text); transition: transform .1s, opacity .15s; }
+  .btn:active { transform: translateY(1px); }
+  .btn:disabled { opacity: .45; cursor: default; }
+  .spinner { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--border); border-top-color: var(--accent); animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .empty { padding: 22px; text-align: center; color: var(--faint); font-size: 14px; }
+
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 30px; }
+  .feature { padding: 16px; }
+  .feature .fi { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); margin-bottom: 10px; }
+  .feature h3 { font-size: 13.5px; margin: 0 0 4px; font-weight: 600; }
+  .feature p { font-size: 12.5px; color: var(--muted); margin: 0; line-height: 1.55; }
+  @media (max-width: 620px) {
+    .features { grid-template-columns: 1fr; }
+    .file { grid-template-columns: auto 1fr; }
+    .actions { grid-column: 1 / -1; grid-row: auto; margin-top: 12px; order: 6; }
+    .meter { order: 5; }
+    .actions .btn { flex: 1; justify-content: center; }
+  }
+  footer { margin-top: 26px; text-align: center; font-size: 12px; color: var(--faint); }
+
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 8px); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 13.5px; opacity: 0; transition: opacity .2s, transform .2s; pointer-events: none; z-index: 10; }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="brand">
+      <div class="logo" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6"/><path d="M20 10h-6V4"/><path d="M14 10l7-7"/><path d="M3 21l7-7"/></svg>
+      </div>
+      PDF Slim
+    </div>
+    <div class="badge">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      Processed on your device — never uploaded
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1>Shrink PDFs, <span>keep everything.</span></h1>
+    <p>Works on handwritten notes and e‑textbooks. Text stays selectable, and your highlights and annotations stay where they were.</p>
+  </section>
+
+  <section class="card">
+    <div class="drop" id="drop" tabindex="0" role="button" aria-label="Choose PDF files">
+      <div class="icon" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4"/><path d="m6 10 6-6 6 6"/><path d="M4 20h16"/></svg>
+      </div>
+      <div class="big">Drop PDFs here or <u>browse</u></div>
+      <div class="small">Multiple files supported</div>
+      <input type="file" id="pick" accept="application/pdf,.pdf" multiple hidden>
+    </div>
+
+    <div class="settings">
+      <div>
+        <div class="opt-head"><span class="opt-title">Strokes &amp; vector graphics</span><span class="opt-sub">Biggest win for GoodNotes / handwritten notes</span></div>
+        <div class="seg" id="seg-vector">
+          <button data-v="null">Original</button>
+          <button data-v="1" class="on">Balanced</button>
+          <button data-v="0">Maximum</button>
+        </div>
+        <div class="hint" id="hint-vector"></div>
+      </div>
+      <div>
+        <div class="opt-head"><span class="opt-title">Images</span><span class="opt-sub">Biggest win for scans and illustrated books</span></div>
+        <div class="seg" id="seg-image">
+          <button data-v="0">Original</button>
+          <button data-v="200">High</button>
+          <button data-v="150" class="on">Balanced</button>
+          <button data-v="100">Small</button>
+        </div>
+        <div class="hint" id="hint-image"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="section-title">
+    <h2>Files</h2>
+    <button class="link-btn" id="rerun" hidden>Re-run with new settings</button>
+  </div>
+  <div class="files" id="list"><div class="card empty">No files yet.</div></div>
+
+  <section class="features">
+    <div class="card feature">
+      <div class="fi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg></div>
+      <h3>Still editable</h3>
+      <p>Pages are never flattened to images. Search, copy and highlight just like before.</p>
+    </div>
+    <div class="card feature">
+      <div class="fi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></div>
+      <h3>Smart, not blurry</h3>
+      <p>Trims excess precision from pen strokes and resizes only images that are larger than the page needs.</p>
+    </div>
+    <div class="card feature">
+      <div class="fi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+      <h3>Private</h3>
+      <p>Everything runs in your browser. Encrypted PDFs aren't supported yet.</p>
+    </div>
+  </section>
+  <footer>Also merges duplicate resources, removes thumbnails and junk data, and repacks the file with maximum compression.</footer>
+</main>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="pdf-lib.min.js"></script>
+<script src="pako.min.js"></script>
+<script src="core.js"></script>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const settings = { vector: 1, imageDpi: 150 };
+  const VEC_HINT = {
+    'null': 'Lossless cleanup only. Strokes are left untouched.',
+    '1': 'Recommended. Precision stays at ~0.03 mm, so you won’t see a difference even at 300% zoom.',
+    '0': 'Smallest. Error is ~0.2 mm: invisible when reading normally, maybe faintly visible at extreme zoom.',
+  };
+  const IMG_HINT = {
+    '0': 'Images are left untouched.',
+    '200': '200 dpi. Good for printing or zooming in on detail.',
+    '150': 'Recommended. 150 dpi is crisp on screens and much smaller.',
+    '100': '100 dpi. The smallest files, fine for reading on a phone or tablet.',
+  };
+  const QUALITY = { 200: 0.82, 150: 0.75, 100: 0.65 };
+
+  function seg(id, key, hintId, hints) {
+    const el = $(id);
+    const thumb = document.createElement('span'); thumb.className = 'thumb'; el.prepend(thumb);
+    const place = () => {
+      const on = el.querySelector('button.on');
+      thumb.style.left = on.offsetLeft + 'px'; thumb.style.width = on.offsetWidth + 'px';
+      $(hintId).textContent = hints[String(settings[key])];
+    };
+    el.addEventListener('click', (e) => {
+      const b = e.target.closest('button'); if (!b) return;
+      el.querySelectorAll('button').forEach((x) => x.classList.toggle('on', x === b));
+      settings[key] = b.dataset.v === 'null' ? null : Number(b.dataset.v);
+      place();
+      if (files.some((f) => f.result || f.error)) $('rerun').hidden = false;
+    });
+    place();
+    window.addEventListener('resize', place);
+    if (document.fonts) document.fonts.ready.then(place);
+  }
+
+  let downloads = null;
+  const dlReady = (async () => {
+    try { if (window.claude && window.claude.use) downloads = await window.claude.use('downloads'); } catch (e) {}
+  })();
+
+  function toast(msg) { const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2600); }
+  const fmtSize = (n) => n >= 1048576 ? (n / 1048576).toFixed(n >= 104857600 ? 0 : 1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+  const env = {
+    decodeJpeg: (bytes) => createImageBitmap(new Blob([bytes], { type: 'image/jpeg' })),
+    encodeJpeg: async (src, w, h, q) => {
+      let img = src;
+      if (!(src instanceof ImageBitmap)) {
+        const c0 = document.createElement('canvas'); c0.width = src.width; c0.height = src.height;
+        c0.getContext('2d').putImageData(new ImageData(src.data, src.width, src.height), 0, 0);
+        img = c0;
+      }
+      let cw = img.width, ch = img.height, cur = img;
+      while (cw / 2 >= w && ch / 2 >= h) {
+        cw = Math.round(cw / 2); ch = Math.round(ch / 2);
+        const c = document.createElement('canvas'); c.width = cw; c.height = ch;
+        const g = c.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(cur, 0, 0, cw, ch); cur = c;
+      }
+      const c = document.createElement('canvas'); c.width = w; c.height = h;
+      const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, w, h);
+      g.imageSmoothingQuality = 'high'; g.drawImage(cur, 0, 0, w, h);
+      if (src.close) src.close();
+      const blob = await new Promise((r) => c.toBlob(r, 'image/jpeg', q));
+      if (!blob) return null;
+      return { bytes: new Uint8Array(await blob.arrayBuffer()), gray: false };
+    },
+  };
+
+  const files = [];
+  let busy = false;
+
+  const DL_ICON = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12"/><path d="m6 10 6 6 6-6"/><path d="M4 20h16"/></svg>';
+
+  function render() {
+    const list = $('list');
+    if (!files.length) { list.innerHTML = '<div class="card empty">No files yet.</div>'; return; }
+    list.innerHTML = '';
+    files.forEach((f) => {
+      const d = document.createElement('div'); d.className = 'card file';
+      let meta = '', actions = '', meterCls = 'meter', meterW = Math.round((f.frac || 0) * 100);
+      if (f.error) {
+        meta = `<span class="err">${esc(f.error)}</span>`; meterCls += '" hidden="';
+      } else if (f.result) {
+        const r = f.result, saved = 1 - r.bytes.length / f.size, s = r.stats;
+        const bits = [`${r.pages} page${r.pages === 1 ? '' : 's'}`];
+        if (s.vector) bits.push(`${s.vector} content stream${s.vector === 1 ? '' : 's'} slimmed`);
+        if (s.imagesDone) bits.push(`${s.imagesDone} of ${s.images} images resized`);
+        if (s.deduped) bits.push(`${s.deduped} duplicates merged`);
+        if (saved <= 0.01) bits.push('already well optimized');
+        meta = `<div class="nums"><s>${fmtSize(f.size)}</s>→<b>${fmtSize(r.bytes.length)}</b>${saved > 0.005 ? `<span class="pill">−${Math.round(saved * 100)}%</span>` : ''}</div><div class="detail">${bits.join(' · ')}</div>`;
+        actions = `<button class="btn" data-dl>${DL_ICON}Download</button>`;
+        meterCls += ' done'; meterW = Math.max(3, Math.round((r.bytes.length / f.size) * 100));
+      } else {
+        meta = `${fmtSize(f.size)} · <span data-status>${esc(f.status || 'Queued…')}</span>`;
+        actions = '<div class="spinner" aria-label="Working"></div>';
+      }
+      d.innerHTML = `<div class="ficon">PDF</div><div class="fname" title="${esc(f.name)}">${esc(f.name)}</div><div class="actions">${actions}</div><div class="fmeta">${meta}</div><div class="${meterCls}"><i style="width:${meterW}%"></i></div>`;
+      const b = d.querySelector('[data-dl]'); if (b) b.onclick = () => save(f, b);
+      f.el = { status: d.querySelector('[data-status]'), bar: d.querySelector('.meter > i') };
+      list.appendChild(d);
+    });
+  }
+
+  const outName = (name) => name.replace(/\.pdf$/i, '') + '-slim.pdf';
+
+  async function save(f, btn) {
+    await dlReady;
+    const data = new Blob([f.result.bytes], { type: 'application/pdf' });
+    if (downloads) {
+      btn.disabled = true;
+      try { await downloads.save({ filename: outName(f.name), data }); toast('Saved'); }
+      catch (e) {
+        const code = e && e.code;
+        if (code === 'declined') {}
+        else if (code === 'rate_limited') toast('One moment — try again shortly');
+        else toast('Downloads aren’t available in this view' + (code ? ` (${code})` : ''));
+      }
+      btn.disabled = false;
+      return;
+    }
+    const a = document.createElement('a'); a.href = URL.createObjectURL(data); a.download = outName(f.name);
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 30000);
+  }
+
+  async function processQueue() {
+    if (busy) return;
+    busy = true;
+    for (const f of files) {
+      if (f.result || f.error) continue;
+      try {
+        const opts = { vector: settings.vector, imageDpi: settings.imageDpi, imageQuality: QUALITY[settings.imageDpi] || 0.75 };
+        const r = await PDFSlim.slim(f.bytes.slice(0), opts, Object.assign({}, env, {
+          progress: (msg, frac) => {
+            f.status = msg; f.frac = frac;
+            if (f.el && f.el.status) f.el.status.textContent = msg;
+            if (f.el && f.el.bar) f.el.bar.style.width = Math.round(frac * 100) + '%';
+          },
+        }));
+        if (r.bytes.length >= f.size) r.bytes = f.bytes; // never hand back something bigger
+        f.result = r;
+      } catch (e) {
+        console.error(e);
+        f.error = e && e.code === 'encrypted' ? e.message : 'Couldn’t process this PDF — its structure may be unusual (' + ((e && e.message) || e) + ').';
+      }
+      render();
+    }
+    busy = false;
+    if (files.some((f) => !f.result && !f.error)) processQueue();
+  }
+
+  async function addFiles(list) {
+    const pdfs = [...list].filter((f) => /\.pdf$/i.test(f.name) || f.type === 'application/pdf');
+    if (!pdfs.length) { toast('Please choose PDF files'); return; }
+    for (const file of pdfs) files.push({ name: file.name, size: file.size, bytes: new Uint8Array(await file.arrayBuffer()) });
+    render();
+    processQueue();
+  }
+
+  const drop = $('drop'), pick = $('pick');
+  drop.addEventListener('click', () => pick.click());
+  drop.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick.click(); } });
+  pick.addEventListener('change', () => { addFiles(pick.files); pick.value = ''; });
+  ['dragenter', 'dragover'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove('over'); }));
+  drop.addEventListener('drop', (e) => addFiles(e.dataTransfer.files));
+  window.addEventListener('dragover', (e) => e.preventDefault());
+  window.addEventListener('drop', (e) => { e.preventDefault(); if (!drop.contains(e.target)) addFiles(e.dataTransfer.files); });
+
+  $('rerun').addEventListener('click', () => {
+    files.forEach((f) => { f.result = null; f.error = null; f.status = null; f.frac = 0; });
+    $('rerun').hidden = true; render(); processQueue();
+  });
+
+  seg('seg-vector', 'vector', 'hint-vector', VEC_HINT);
+  seg('seg-image', 'imageDpi', 'hint-image', IMG_HINT);
+})();
+</script>
+</body>
+</html>
